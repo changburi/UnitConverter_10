@@ -30,6 +30,8 @@
 | 17 | `/red-test-plan` FR-LOC-01 | C2C · D-LOC-01~03 설계표 |
 | 18 | `/red-skeleton` D-LOC-01 | `tests/conftest.py`, `test_d_loc_01.py` |
 | 19 | RED 보고 · Transcript | `Report/05.*`, `Session_D_LOC_01_Transcript_Export.md` |
+| 20 | `/green-minimal` D-LOC-01 | `loc.py`, assert, 7/7 PASS |
+| 21 | GREEN 보고 · Transcript | `Report/06.*`, `Session_D_LOC_01_GREEN_Transcript_Export.md` |
 
 ---
 
@@ -101,7 +103,7 @@ boundary → control → entity
 
 | ID | Given | Then |
 |----|-------|------|
-| D-LOC-01 | `grid_g1` (0×2) | `[(2,2),(3,3)]` ✅ RED 스켈레톤 |
+| D-LOC-01 | `grid_g1` (0×2) | `[(2,2),(3,3)]` ✅ **GREEN** |
 | D-LOC-02 | `grid_g2` (0×1) | `[(1,1)]` ⏳ |
 | D-LOC-03 | `grid_g3` (0×0) | `[]` ⏳ |
 
@@ -152,7 +154,7 @@ Phase: RED | Layer: entity | Track: Logic | TestID: D-LOC-01
 - [x] `tests/entity/test_d_loc_01.py` RED (D-LOC-01)
 - [x] `src/entity/constants.py` (GRID 34/16/4)
 - [ ] D-LOC-02 / D-LOC-03 RED 스켈레톤
-- [ ] `find_blank_coords` entity GREEN
+- [x] `find_blank_coords` entity GREEN (D-LOC-01)
 - [ ] `tests/boundary/test_u_in_01.py` RED
 - [ ] `stop` Hook
 - [ ] Activity 4

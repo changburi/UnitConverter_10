@@ -1,0 +1,49 @@
+# UnitConverter_10 — .cursorrules (초안)
+
+## 프로젝트
+- 길이 단위 변환 CLI: 수치 + 현재 단위(meter|feet|yard) → 변환 대상 단위 선택 → 변환값 출력
+- 근거 문서: Report/01, Report/02, docs/PRD.md, README 비즈니스 규칙
+- 코드 루트: `src/{entity,control,boundary}/`, 테스트: `tests/{entity,control,boundary}/`
+
+## 도메인
+- 입력: `{source_unit}:{value}` (예: `meter:2.5`), 대상 단위: meter | feet | yard
+- 출력: `{value} {source} = {converted} {target}` 형식
+- 오류 코드 (Boundary 전담 발행·표시):
+  - E001 형식 오류(콜론 없음/형식 불일치)
+  - E002 숫자 오류(float 변환 실패)
+  - E003 미지원 원본 단위
+  - E004 음수 값
+  - E005 빈 입력·빈 값
+  - E006 미지원 대상 단위
+  - E007 출력·I/O 실패
+- Entity: 순수 변환만. **E001~E005 처리·검사·메시지 금지** (유효한 값 객체만 받는다)
+
+## ECB 아키텍처
+- 의존 방향: **boundary → control → entity** (역방향 import 금지)
+- **entity → \* import 금지** (표준 라이브러리·typing만 허용)
+- boundary: InputHandler, ResultDisplay, E001~E007 사용자-facing 처리
+- control: InputValidator(E001~E005), Solver(변환 orchestration)
+- entity: LengthInput, ConversionResult, UnitRatio — 부수효과 없음
+
+## Dual-Track TDD
+- **Track 1 Logic** (entity, control): Domain Mock **금지**. 실제 상수·순수 함수만
+- **Track 2 UI** (boundary): stdin/stdout·입력 핸들러 Mock **허용**
+- 테스트 ID·파일명:
+  - Logic: `D-*` → `tests/entity/test_d_*.py`, `tests/control/test_d_*.py`
+  - UI: `U-*` → `tests/boundary/test_u_*.py`
+- TDD: **RED → GREEN → REFACTOR** 엄수
+  - `pytest.approx` 남용·assert 완화·`skip`·`xfail` **금지** (사용자 명시 요청 시만 예외)
+- MagicConstant SSOT: `3.28084`, `1.09361` 등 변환 상수는 **단일 모듈**(예: `src/entity/constants.py`)만. 산재 리터럴 금지
+
+## AI 행동
+- **한국어**로 설명·주석·커밋 메시지 초안
+- TDD 작업 시 매 응답 상단에 선언: `Phase: RED|GREEN|REFACTOR | Layer: entity|control|boundary | Track: Logic|UI`
+- 변경 범위 최소화. 요청 없는 파일·리팩터 금지
+- **`git commit` / `git push`는 사용자가 명시 요청할 때만**
+- Mom Test: 솔루션名·미래 가정("~하면 좋겠다") 문제 정의에 섞지 않음
+
+## 실행
+```bash
+python -m pytest tests/ -v
+python UnitConverter.py
+```

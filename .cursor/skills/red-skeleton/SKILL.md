@@ -71,7 +71,7 @@ class TestDLoc01BlankCoords:
 | FAIL | pytest 한 줄 |
 | 변경 파일 | `tests/` 목록 |
 
-**다음:** GREEN은 별도 Command/요청
+**다음:** `/green-minimal` · ARRR: [unit-converter-tdd](../unit-converter-tdd/SKILL.md)
 
 ---
 

@@ -1,6 +1,8 @@
 ---
 name: unit-converter-tdd
-description: UnitConverter_10 Dual-Track TDD·ECB 개발 시 Agent가 따를 절차
+description: >-
+  UnitConverter_10 Dual-Track TDD·ECB·ARRR 실습. red-test-plan → red-skeleton →
+  green-minimal → golden-master → refactor-smell → refactor-safe. D-LOC FR-LOC-01.
 ---
 
 # UnitConverter_10 — Dual-Track TDD Skill
@@ -145,8 +147,39 @@ description: UnitConverter_10 Dual-Track TDD·ECB 개발 시 Agent가 따를 절
 
 ---
 
+## ARRR 실습 체인
+
+| 글자 | Phase | Command | 산출 |
+|------|-------|---------|------|
+| **A**rrange | RED 설계 | `/red-test-plan` | C2C·설계표 (tests/src **미생성**) |
+| **R**ED | RED | `/red-skeleton` | `pytest.fail` · conftest |
+| **R**un | GREEN | `/green-minimal` | entity 최소 · assert PASS |
+| **R**efine | Golden+Refactor | `/golden-master` → `/refactor-smell` → `/refactor-safe` | Approval · smell · safe |
+
+세션 Export: `/export` — [unit-converter-docs](../unit-converter-docs/SKILL.md) · `.cursor/commands/export.md`
+
+**슬래시 단독 입력:** 모든 ARRR Command는 `/이름` 만으로 동작 · **추가 질문 금지**.
+
+고정 기본값 (Logic · entity · D-LOC-01):
+
+```
+find_blank_coords(grid) · FR-LOC-01 · SSOT constants.py · 1-index row-major
+```
+
+| Test ID | Fixture | Then |
+|---------|---------|------|
+| D-LOC-01 | `grid_g1` | `[(2,2),(3,3)]` |
+| D-LOC-02 | `grid_g2` | `[(1,1)]` |
+| D-LOC-03 | `grid_g3` | `[]` |
+
+Commands: `.cursor/commands/red-test-plan.md` … `refactor-safe.md`
+
+---
+
 ## 참고
 
 - 헌법: `.cursorrules`
 - D-* ID: [reference.md](reference.md)
 - PRD: `docs/PRD.md`
+- 문서 Export: [unit-converter-docs](../unit-converter-docs/SKILL.md)
+- 레거시 RED: `.cursor/commands/tdd-red.md`

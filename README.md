@@ -116,6 +116,78 @@ deactivate
 
 ---
 
+### ARRR 실습 순서
+
+| 글자 | Phase | Command | 산출 |
+|------|-------|---------|------|
+| **A**rrange | RED 설계 | `/red-test-plan` | C2C·설계표 (tests/src **미생성**) |
+| **R**ED | RED | `/red-skeleton` | `pytest.fail` · conftest |
+| **R**un | GREEN | `/green-minimal` | entity/control/boundary 최소 · assert PASS |
+| **R**efine | Golden+Refactor | `/golden-master` → `/refactor-smell` → `/refactor-safe` | Approval · smell · safe |
+
+세션 Export: `/export` — `Report/NN.REPORT.md` + `Prompting/NN.Export-Transcript.md`
+
+슬래시 단독 입력: 모든 ARRR Command는 `/이름` 만으로 동작 (추가 질문 금지).
+
+---
+
+### REFACTOR To-Do
+
+> **전제 (2026-06-11):** `python -m pytest tests/ -v` → **11 passed**  
+> **스캔 범위:** `src/` · `tests/` (+ 레거시 `UnitConverter.py`)  
+> **Change Budget (`/refactor-safe` 1회):** 파일 ≤ 3 · 클래스 ≤ 1 · 메서드 ≤ 3
+
+#### 스멜 표 (`/refactor-smell` 결과)
+
+| # | P | 유형 | Track | 파일:함수 | 내용 | Budget | 권고 |
+|---|-----|------|-------|-----------|------|--------|------|
+| 1 | **P0** | Magic Number | Logic+UI | `UnitConverter.py:main` | `3.28084`·`1.09361` 리터럴 4회 — `constants.py` SSOT 미사용 | ✅ 1파일·1함수 | ECB `validate`/`solve` 또는 최소 `constants` import로 치환 |
+| 2 | **P0** | ECB 위반 (아키텍처 이탈) | Logic+UI | `UnitConverter.py:main` | 검증·변환·출력을 루트 스크립트에 중복 구현 — `src/` ECB 미경유 | ✅ 1파일·1함수 | `boundary.cli.process_input_line` 또는 control+entity thin wrapper로 위임 |
+| 3 | **P1** | Duplicated Code | Logic | `validation.py:validate_number`, `validate` | `float()` try/except 블록 2회 (각 4~5줄, 합 ~10줄) | ✅ 1파일·1헬퍼 | `_parse_float(value_str) -> float \| ValidationError` 추출 후 공용 |
+| 4 | **P1** | Duplicated Code | Logic | `solver.py:solve` | 동일 f-string 패턴 3회 (`meter`/`feet`/`yard`) | ✅ 1파일·1헬퍼 | `(UNIT_METER,"meter"), …` 순회 또는 `_format_line(...)` |
+| 5 | **P1** | Magic Number (테스트 SSOT) | Logic | `tests/test_converter.py` (모듈) | `METER_TO_FEET`/`METER_TO_YARD` 로컬 재정의 — entity SSOT와 이중 유지 | ✅ 1파일 | `from src.entity.constants import …` 로 통일 |
+| 6 | **P1** | Feature Envy / boundary 우회 | UI | `demo_gui.py:_on_convert` | `f"{unit}:{value_str}"` 조립 + `validate`→`solve` 직접 호출 — `cli.process_input_line` 미사용 | ⚠️ 1파일·1메서드 | 공통 orchestration을 boundary로 올리거나 GUI는 `process_input_line` + 코드 표시만 분기 |
+| 7 | **P2** | Long Method | UI | `demo_gui.py:_build_widgets` | ~42줄 — 위젯 배치·힌트·버튼 한 메서드 | ⚠️ 클래스 1·메서드 2+ | `_build_input_row` / `_build_actions` 등 private 분리 |
+| 8 | **P2** | Long Method | — | `UnitConverter.py:main` | ~32줄 — 파싱·검증·변환·출력 4책임 (P0 리팩터 시 함께 해소) | (P0와 동일) | P0 후보와 통합 처리 |
+| 9 | **P2** | Duplicated Code | Logic | `tests/entity/test_d_loc_01.py` | D-LOC-02/03 Given-When-Then 구조 반복 | △ | 공통 헬퍼보다 현 상태 유지 권장 (의미 변경 위험) |
+| 10 | **P2** | Mysterious Name | Logic | `boundary/cli.py:process_input_line` | 오류 시 `message`만 반환 — 코드(`E001`) 소실 | △ | `ValidationError` 전체 반환 또는 `format_error()` boundary 헬퍼 검토 |
+
+**ECB 점검 (`src/` 내부):** entity→boundary/control import 없음 · entity E001~E005 없음 · `boundary → control → entity` 준수 · 격자 `34/16/4` 리터럴 없음 ✅
+
+#### `/refactor-safe` 후보 (Budget 내)
+
+| 순위 | 대상 | 리팩터 (1문장) | Budget |
+|------|------|----------------|--------|
+| **1 (P0)** | `UnitConverter.py:main` | ECB 경유 thin CLI — `process_input_line` 호출 또는 control+entity 위임, 매직넘버 제거 | 파일 1 · 함수 1 ✅ |
+| **2 (P1)** | `validation.py` | `_parse_float` 헬퍼로 `validate_number`/`validate` 중복 제거 | 파일 1 · 메서드 1 ✅ |
+| **3 (P1)** | `solver.py:solve` | 단위별 출력 3줄을 SSOT 단위 튜플 순회로 통합 | 파일 1 · 메서드 1 ✅ |
+
+#### 다음 단계
+
+**P0 1건**이 있으므로, **`UnitConverter.py` ECB·SSOT 정리**를 먼저 골라 `/refactor-safe`를 실행한다.
+
+```
+/refactor-safe
+Phase: REFACTOR | Layer: boundary | Track: Logic+UI | TestID: D-LOC-01
+대상: P0 #1 — UnitConverter.py → process_input_line (또는 control+entity) 위임
+```
+
+P0 적용 후 `python -m pytest tests/ -v`로 레거시 6건(`tests/test_converter.py`) 포함 **11 passed** 유지.
+
+---
+
+### 후속 (예정)
+
+| # | 작업 | Command / 비고 |
+|---|------|----------------|
+| 1 | D-LOC-01 Approval Test | `/golden-master` — `str(unit_convert(2.5,"meter"))` |
+| 2 | `golden-master.md` Command 예시 갱신 | `find_blank_coords` → `unit_convert` |
+| 3 | control E004/E005 · boundary 추가 테스트 | `/red-skeleton` → `/green-minimal` |
+| 4 | Activity 4 — 설정·동적 단위·출력 포맷 | README 추가 요구사항 |
+| 5 | git commit | 사용자 요청 시 |
+
+---
+
 ### 문서
 
 | 문서 | 설명 |
